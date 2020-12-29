@@ -7,12 +7,8 @@ import Signin from './components/Signin/Signin';
 import Register from './components/Register/Register';
 import Rank from './components/Rank/Rank';
 import Particles from 'react-particles-js';
-import Clarifai from 'clarifai';
 import './App.css';
 
-const app = new Clarifai.App({
- apiKey: '84f63462890441b2807310411aaf8b52'
-});
 
 const particleConfig = {
   particles: {
@@ -25,10 +21,8 @@ const particleConfig = {
     }
   }
 }
-class App extends Component{
-  constructor(){
-    super();
-    this.state = {
+
+const initialState = {
       input: '',
       imageURL:'',
       box: {},
@@ -41,7 +35,12 @@ class App extends Component{
         entries: 0,
         joined: ''
       }
-    }
+}
+
+class App extends Component{
+  constructor(){
+    super();
+    this.state = initialState;
   }
   loadUser = (data) =>{
     this.setState({user:{
@@ -74,29 +73,37 @@ class App extends Component{
     this.setState(() => {
       return {imageURL: this.state.input};
     });
-    app.models
-      .predict('c0c0ac362b03416da06ab3fa36fb58e3', this.state.input)
+      fetch('https://stormy-woodland-14396.herokuapp.com/imageurl',  {
+        method: 'post',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          input: this.state.input
+        })
+      })
+      .then(response => response.json())
       .then(response =>{
         if (response){
-          fetch('http://localhost:3001/image',  {
+          fetch('https://stormy-woodland-14396.herokuapp.com/image',  {
             method: 'put',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
-              id: this.state.user.id,
+              id: this.state.user.id
             })
           })
           .then(response => response.json())
           .then(count => {
             this.setState(Object.assign(this.state.user, {entries: count}));
           })
+          .catch(console.log)
         }
-        this.displayFaceBox(this.calculateFaceLocation(response))
+        this.displayFaceBox(this.calculateFaceLocation(response));
+        console.log(response);
       })
       .catch(err => console.log(err));
   }
   onRouteChange = (route) => {
     if (route === 'signin'){
-      this.setState({isSignedIn: false})
+      this.setState(initialState)
     } else if (route === 'home'){
       this.setState({isSignedIn: true})
     }
